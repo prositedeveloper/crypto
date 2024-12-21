@@ -22,9 +22,12 @@ Route::middleware('auth')->group(function() {
     Route::get('/wallets', [WalletController::class, 'index'])->name('wallets.index');
     Route::get('/wallet/create', [WalletController::class, 'create'])->name('wallets.create');
     Route::post('/wallet/store', [WalletController::class, 'store'])->name('wallets.store');
-    Route::delete('/wallet/{id}', [WalletController::class, 'destroy'])->name('wallets.destroy');
+    Route::post('/wallet/{id}/recharge', [WalletController::class, 'processRecharge'])->name('wallets.process_recharge');
+    Route::get('/wallet/{id}/recharge', [WalletController::class, 'recharge'])->name('wallets.recharge');
+    Route::delete('/wallet/{id}', [WalletController::class, 'destroy'])->name('wallets.destroy');    
     Route::get('/transactions/create', [TransactionController::class, 'create'])->name('transactions.create');
     Route::post('/transactions/store', [TransactionController::class, 'store'])->name('transactions.store');
+    Route::post('/transactions/{id}/match', [TransactionController::class, 'match'])->name('transactions.match');
     Route::delete('/transactions/{id}', [TransactionController::class, 'destroy'])->name('transactions.destroy');
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 });

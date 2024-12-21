@@ -6,6 +6,7 @@ use App\Models\Currency;
 use App\Models\Transaction;
 use App\Models\Wallet;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class TransactionController extends Controller
 {
@@ -22,7 +23,6 @@ class TransactionController extends Controller
             'buy_currency_id' => 'required|exists:currencies,id',
             'sell_amount' => 'required|numeric|min:0',
             'buy_amount' => 'required|numeric|min:0',
-            'price' => 'required|numeric|min:0',
         ]);
 
         Transaction::create([
@@ -31,11 +31,8 @@ class TransactionController extends Controller
             'buy_currency_id' => $request->buy_currency_id,
             'sell_amount' => $request->sell_amount,
             'buy_amount' => $request->buy_amount,
-            'price' => $request->price,
             'status' => 'open'
         ]);
-
-        $this->autoMatch();
 
         return redirect()->route('transactions.list')->with('success', 'Заявка успешно создана!');
     }
@@ -43,58 +40,61 @@ class TransactionController extends Controller
     public function list()
     {
         $transactions = Transaction::where('status', 'open')->get();
-        return view('transaction-index', compact(var_name: 'transactions'));
+        $wallets = Wallet::where('user_id', auth()->id())->get(); 
+        return view('transaction-index', compact('transactions', 'wallets'));
     }
 
-    public function autoMatch()
+
+    public function match($transactionId)
     {
-        $buyTransactions = Transaction::where('status', 'open')->get();
-        
-        foreach($buyTransactions as $buyTransaction)
-        {
-            $matchingTransactions = Transaction::where('status', 'open')
-                ->where('buy_currency_id', $buyTransaction->sell_currency_id)
-                ->where('sell_currency_id', $buyTransaction->ssell_currency_id)
-                ->where('price', $buyTransaction->price)
-                ->get();
+        $buyTransaction = Transaction::findOrFail($transactionId);
+        $matchingTransactions = Transaction::where('status', 'open')
+            ->where('buy_currency_id', $buyTransaction->sell_currency_id) // покупаемая валюта продавца
+            ->where('sell_currency_id', $buyTransaction->buy_currency_id) // продаваемая валюта покупателя
+            ->get();
 
-            foreach($matchingTransactions as $sellTransaction)
-            {
-                $buyWallet = Wallet::where('user_id', $buyTransaction->user_id)
-                    ->where('currency_id', $buyTransaction->buy_currency_id)
-                    ->first();
+        foreach ($matchingTransactions as $sellTransaction) {
 
-                $sellWallet = Wallet::where('user_id', $buyTransaction->user_id)
-                    ->where('currency_id', $buyTransaction->sell_currency_id)
-                    ->first();
+            if ($buyTransaction->status !== 'open' || $sellTransaction->status !== 'open') {
+                continue;
+            }
 
-                if ($buyWallet && $sellWallet && 
-                    $buyWallet->balance >= $buyTransaction->buy_amount && 
-                    $sellWallet->balance >= $sellTransaction->sell_amount)
-                {
-                    $buyWallet->balance -= $buyTransaction->buy_amount;
-                    $buyWallet->save();
+            $buyWallet = Wallet::where('user_id', $buyTransaction->user_id)
+                ->where('currency_id', $buyTransaction->buy_currency_id)
+                ->first();
 
-                    $sellWallet->balance -= $sellTransaction->sell_amount;
-                    $sellWallet->save();
+            $sellWallet = Wallet::where('user_id', $sellTransaction->user_id)
+                ->where('currency_id', $sellTransaction->sell_currency_id)
+                ->first();
 
-                    $buyWallet->currency()->associate($buyTransaction->sell_currency_id);
-                    $buyWallet->balance += $sellTransaction->sell_amount;
-                    $buyWallet->save();
 
-                    $sellWallet->currency()->associate($sellTransaction->buy_currency_id);
-                    $sellWallet->balance += $buyTransaction->sell_amount;
-                    $sellWallet->save();
+            if ($buyWallet && $sellWallet &&
+                $buyWallet->balance >= $buyTransaction->buy_amount &&
+                $sellWallet->balance >= $sellTransaction->sell_amount) {
 
-                    $buyTransaction->status = 'closed';
-                    $buyTransaction->save();
+                $buyWallet->balance = bcsub($buyWallet->balance, $buyTransaction->buy_amount, 8);  
+                $buyWallet->balance = bcadd($buyWallet->balance, $sellTransaction->sell_amount, 8);  
+                $buyWallet->save();
 
-                    $sellTransaction->status = 'closed';
-                    $sellTransaction->save();
-                }
+                $sellWallet->balance = bcsub($sellWallet->balance, $sellTransaction->sell_amount, 8); 
+                $sellWallet->balance = bcadd($sellWallet->balance, $buyTransaction->buy_amount, 8);  
+                $sellWallet->save();
+                
+
+                $buyTransaction->status = 'closed';
+                $sellTransaction->status = 'closed';
+
+                $buyTransaction->save();
+                $sellTransaction->save();
+
+                return redirect()->route('transactions.list')->with('success', 'Обмен успешен!');
             }
         }
+
+        return redirect()->route('transactions.list')->withErrors('Не удалось выполнить обмен. Проверьте наличие подходящих заявок и баланс.');
     }
+
+
 
     public function destroy($id)
     {

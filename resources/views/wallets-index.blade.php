@@ -30,6 +30,7 @@
                             @method('DELETE')
                             <button type="submit" class="btn btn-danger" onclick="return confirm('Вы уверены, что хотите удалить этот кошелек')">Удалить</button>
                         </form>
+                        <a href="{{ route('wallets.recharge', $wallet->id) }}" class="btn btn-primary">Пополнить баланс</a>
                     </td>
                 </tr>
             @endforeach

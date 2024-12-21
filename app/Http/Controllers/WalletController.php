@@ -11,7 +11,29 @@ class WalletController extends Controller
     public function index()
     {
         $wallets = Wallet::where('user_id', auth()->id())->get();
-        return view('wallets-index', compact('wallets')); // Используем правильное имя файла
+        return view('wallets-index', compact('wallets')); 
+    }
+
+    public function recharge($id)
+    {
+        $wallet = Wallet::findOrFail($id);
+
+        return view('wallets-recharge', compact('wallet'));
+    }
+
+    public function processRecharge(Request $request, $id)
+    {
+        $wallet = Wallet::findOrFail($id);
+
+        $request->validate([
+            'amount' => 'required|numeric|min:0.01'
+        ]);
+
+        $wallet->balance += $request->amount;
+
+        $wallet->save();
+
+        return redirect()->route('wallets.index')->with('success', 'Баланс успешно пополнен!');
     }
 
 
@@ -27,6 +49,16 @@ class WalletController extends Controller
             'currency_id' => 'required|exists:currencies,id',
             'balance' => 'required|numeric|min:0'
         ]);
+
+        $existWallet = Wallet::where('user_id', auth()->id())
+                        ->where('currency_id', $request->currency_id)
+                        ->first();
+
+        if ($existWallet)
+        {
+            return redirect()->route('wallets.create')
+                            ->withErrors(['currency_id' => 'У вас есть кошелек с этой валютой']);
+        }
 
         Wallet::create([
             'user_id' => auth()->id(),

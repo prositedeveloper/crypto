@@ -50,11 +50,6 @@
             <input type="number" step="0.01" name="buy_amount" id="buy_amount" class="form-control">
         </div>
 
-        <div class="mb-3">
-            <label for="price" class="form-label">Цена</label>
-            <input type="number" step="0.01" name="price" id="price" class="form-control">
-        </div>
-
         <button type="submit" class="btn btn-primary">Создать заявку</button>
     </form>
 @endsection
