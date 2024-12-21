@@ -54,12 +54,12 @@
                     <td>{{ $transaction->buy_amount }}</td>
                     <td>
                         @auth
-                            @if ($transaction->user_id !== auth()->id())
+                            {{-- @if ($transaction->user_id !== auth()->id())
                                 <form action="{{ route('transactions.match', $transaction->id) }}" method="POST">
                                     @csrf
                                     <button type="submit" class="btn btn-primary">Обменять</button>
                                 </form>
-                            @endif
+                            @endif --}}
                             @if ($transaction->user_id === auth()->id())
                                 <form action="{{ route('transactions.destroy', $transaction->id) }}" method="POST" style="display: inline-block">
                                     @csrf

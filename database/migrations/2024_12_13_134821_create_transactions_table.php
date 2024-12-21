@@ -18,7 +18,6 @@ return new class extends Migration
             $table->foreignId('buy_currency_id')->constrained('currencies')->cascadeOnDelete();
             $table->decimal('sell_amount', 18, 8);
             $table->decimal('buy_amount', 18, 8);
-            $table->decimal('price', 18, 8);
             $table->enum('status', ['open', 'closed'])->default('open');
             $table->timestamps();
         });

@@ -27,7 +27,7 @@ Route::middleware('auth')->group(function() {
     Route::delete('/wallet/{id}', [WalletController::class, 'destroy'])->name('wallets.destroy');    
     Route::get('/transactions/create', [TransactionController::class, 'create'])->name('transactions.create');
     Route::post('/transactions/store', [TransactionController::class, 'store'])->name('transactions.store');
-    Route::post('/transactions/{id}/match', [TransactionController::class, 'match'])->name('transactions.match');
+    // Route::post('/transactions/{id}/match', [TransactionController::class, 'match'])->name('transactions.match');
     Route::delete('/transactions/{id}', [TransactionController::class, 'destroy'])->name('transactions.destroy');
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 });
