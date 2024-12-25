@@ -91,31 +91,35 @@ class TransactionController extends Controller
 
     public function completedTransactions()
     {
-        // Fetch the completed transaction where the logged-in user is involved
-        $userTransaction = Transaction::where('status', 'closed')
-            ->where('user_id', auth()->id())  // The logged-in user is the seller or buyer
-            ->with('user', 'sellCurrency', 'buyCurrency') // Eager load the necessary relationships
-            ->first(); // Fetch the first (and only) matching transaction
+        $userTransactions = Transaction::where('status', 'closed')
+            ->where('user_id', auth()->id())  
+            ->with('user', 'sellCurrency', 'buyCurrency') 
+            ->paginate(4); 
 
-        if (!$userTransaction) {
+        if ($userTransactions->isEmpty()) {
             return redirect()->route('transactions.list')->withErrors('Не найдено завершенных сделок.');
         }
 
-        // Fetch the counterparty's matching transaction based on the user's transaction
-        $counterpartyTransaction = Transaction::where('status', 'closed')
-            ->where('sell_currency_id', $userTransaction->buy_currency_id)  // Opposite of user's currency
-            ->where('buy_currency_id', $userTransaction->sell_currency_id)  // Opposite of user's currency
-            ->where('sell_amount', $userTransaction->buy_amount)  // Match amounts
-            ->where('buy_amount', $userTransaction->sell_amount)  // Match amounts
-            ->first(); // Fetch the first matching transaction
+        $transactions = [];
+        foreach ($userTransactions as $key => $userTransaction) {
+            $counterpartyTransaction = Transaction::where('status', 'closed')
+                ->where('sell_currency_id', $userTransaction->buy_currency_id)   
+                ->where('buy_currency_id', $userTransaction->sell_currency_id)  
+                ->where('sell_amount', $userTransaction->buy_amount)  
+                ->where('buy_amount', $userTransaction->sell_amount)  
+                ->first(); 
 
-        if (!$counterpartyTransaction) {
-            return redirect()->route('transactions.list')->withErrors('Не удалось найти обмен для этого запроса.');
+            if ($counterpartyTransaction) {
+                $transactions[] = [
+                    'transaction_number' => $key + 1,  
+                    'user_transaction' => $userTransaction,
+                    'counterparty_transaction' => $counterpartyTransaction
+                ];
+            }
         }
 
-        return view('transactions-completed', compact('userTransaction', 'counterpartyTransaction'));
+        return view('transactions-completed', compact('transactions', 'userTransactions'));
     }
-
 
     public function destroy($id)
     {
