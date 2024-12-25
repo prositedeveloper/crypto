@@ -1,4 +1,4 @@
-@extends('layouts.layout', ['title' => 'fdfd'])
+@extends('layouts.layout', ['title' => 'Страница не найдена'])
 
 @section('content')
     <div class="error-template">
