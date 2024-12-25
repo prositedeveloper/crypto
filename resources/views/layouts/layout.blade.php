@@ -31,6 +31,7 @@
                         {{ Auth::user()->name }}
                     </a>
                     <ul class="dropdown-menu">
+                      <li><a class="dropdown-item" href="{{ route('transactions.completed') }}">Выполненные заявки</a></li>
                       <li><a class="dropdown-item" href="{{ route('wallets.index') }}">Мои кошельки</a></li>
                       <li><a class="dropdown-item" href="{{ route('transactions.create') }}">Создать заявку на обмен</a></li>
                       <li><a class="dropdown-item" href="{{ route('wallets.create') }}">Создать кошелек</a></li>

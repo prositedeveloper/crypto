@@ -89,57 +89,14 @@ class TransactionController extends Controller
         return view('transaction-index', compact('transactions', 'wallets'));
     }
 
+    public function completedTransactions()
+    {
+        $transactions = Transaction::where('status', 'closed')
+                        ->with('user', 'sellCurrency', 'buyCurrency')
+                        ->get();
 
-    // public function match($transactionId)
-    // {
-    //     $buyTransaction = Transaction::findOrFail($transactionId);
-    //     $matchingTransactions = Transaction::where('status', 'open')
-    //         ->where('buy_currency_id', $buyTransaction->sell_currency_id) // покупаемая валюта продавца
-    //         ->where('sell_currency_id', $buyTransaction->buy_currency_id) // продаваемая валюта покупателя
-    //         ->get();
-
-    //     foreach ($matchingTransactions as $sellTransaction) {
-
-    //         if ($buyTransaction->status !== 'open' || $sellTransaction->status !== 'open') {
-    //             continue;
-    //         }
-
-    //         $buyWallet = Wallet::where('user_id', $buyTransaction->user_id)
-    //             ->where('currency_id', $buyTransaction->buy_currency_id)
-    //             ->first();
-
-    //         $sellWallet = Wallet::where('user_id', $sellTransaction->user_id)
-    //             ->where('currency_id', $sellTransaction->sell_currency_id)
-    //             ->first();
-
-
-    //         if ($buyWallet && $sellWallet &&
-    //             $buyWallet->balance >= $buyTransaction->buy_amount &&
-    //             $sellWallet->balance >= $sellTransaction->sell_amount) {
-
-    //             $buyWallet->balance = bcsub($buyWallet->balance, $buyTransaction->buy_amount, 8);  
-    //             $buyWallet->balance = bcadd($buyWallet->balance, $sellTransaction->sell_amount, 8);  
-    //             $buyWallet->save();
-
-    //             $sellWallet->balance = bcsub($sellWallet->balance, $sellTransaction->sell_amount, 8); 
-    //             $sellWallet->balance = bcadd($sellWallet->balance, $buyTransaction->buy_amount, 8);  
-    //             $sellWallet->save();
-                
-
-    //             $buyTransaction->status = 'closed';
-    //             $sellTransaction->status = 'closed';
-
-    //             $buyTransaction->save();
-    //             $sellTransaction->save();
-
-    //             return redirect()->route('transactions.list')->with('success', 'Обмен успешен!');
-    //         }
-    //     }
-
-    //     return redirect()->route('transactions.list')->withErrors('Не удалось выполнить обмен. Проверьте наличие подходящих заявок и баланс.');
-    // }
-
-
+        return view('transactions-completed', compact('transactions'));
+    }
 
     public function destroy($id)
     {
